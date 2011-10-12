@@ -1,0 +1,17 @@
+### C code
+useDynLib(PhaseType, .registration = TRUE)
+
+### Exports
+export(phtMCMC)
+export(phtMCMC2)
+
+### Imports
+import(coda)
+
+### Methods
+S3method(plot, phtMCMC)
+
+S3method(print, phtMCMC)
+
+#S3method(summary, phtMCMC)
+
