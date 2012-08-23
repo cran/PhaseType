@@ -5,6 +5,7 @@
 #include           <stdio.h>
 #include           <math.h>
 #include           <stdlib.h>
+#include           <R.h>
 
 /* *********************************************************************** */
 
@@ -426,7 +427,7 @@ void invert(double prob, ENVELOPE *env, POINT *p)
   }
 
   /* guard against imprecision yielding point outside interval */
-  if ((p->x < xl) || (p->x > xr))exit(1);
+  if ((p->x < xl) || (p->x > xr)) REprintf("ERROR (LJMA_arms.c): imprecision resulted in point outside interval");
 
   return;
 }
@@ -580,7 +581,7 @@ int update(ENVELOPE *env, POINT *p, FUNBAG *lpdf, METROPOLIS *metrop)
     q->pl->pr = q;
   } else {
     /* this should be impossible */
-    exit(10);
+    REprintf("ERROR (LJMA_arms.c): Somehow impossible case evaluated!");
   }
 
   /* now adjust position of q within interval if too close to an endpoint */
@@ -680,7 +681,7 @@ int meet (POINT *q, ENVELOPE *env, METROPOLIS *metrop)
 
   if(q->f){
     /* this is not an intersection point */
-    exit(30);
+    REprintf("ERROR (LJMA_arms.c)(30): non-intersection point passed to meet()");
   }
 
   /* calculate coordinates of point of intersection */
@@ -764,12 +765,12 @@ int meet (POINT *q, ENVELOPE *env, METROPOLIS *metrop)
     q->y = q->pr->y - gr * (q->pr->x - q->x);
   } else {
     /* gradient on neither side - should be impossible */
-    exit(31);
+	REprintf("ERROR (LJMA_arms.c)(31): Somehow impossible case evaluated!");
   }
   if(((q->pl != NULL) && (q->x < q->pl->x)) ||
      ((q->pr != NULL) && (q->x > q->pr->x))){
     /* intersection point outside interval (through imprecision) */
-    exit(32);
+    REprintf("ERROR (LJMA_arms.c)(32): intersection point outside interval (through imprecision)");
   }
   /* successful exit : intersection has been calculated */
   return 0;
@@ -786,7 +787,7 @@ double area(POINT *q)
 
   if(q->pl == NULL){
     /* this is leftmost point in envelope */
-    exit(1);
+    REprintf("ERROR (LJMA_arms.c)(1): found erroneous leftmost point in envelope");
   } else if(q->pl->x == q->x){
     /* interval is zero length */
     a = 0.;

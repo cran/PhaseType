@@ -1,6 +1,6 @@
 #include <R.h>
 #include <Rmath.h>
-#include <R_ext/Applic.h>
+//#include <R_ext/Applic.h>
 
 #include "Simulate_AbsCTMC_gt_Hobolth_DCS.h"
 #include "utility.h"
@@ -186,7 +186,7 @@ void LJMA_samplechain_Hobolth(double *y, double *pi, double *S, double *Q, doubl
 		
 		Tol = 0.0;
 		Maxit = 1000;
-		jtime = R_zeroin2(0.0, *y-t, -pars.u, 1.0-pars.u, HobCDFp, &pars, &Tol, &Maxit);
+		jtime = Find02(0.0, *y-t, -pars.u, 1.0-pars.u, HobCDFp, &pars, &Tol, &Maxit);
 		if(Maxit == -1) {
 			Rprintf("\nWARNING: CDF root finder didn't converge\ny-t=%e, u=%e, Tol=%e, jtime=%e, prob=%e\n", *y-t, pars.u, Tol, jtime, Pab);
 			//Rprintf("\n\nERROR ERROR, ABORT ABORT: t=%.20e\ny=%.20e\ny-t+jtime=%.20e\ny-t=%.20e\nu=%.20e\njtime=%.20e\nTol=%.20e\nIt=%d\nL_bound=%.20e\nR_bound=%.20e\n\n", pars.t, pars.y, t, pars.y-pars.t, pars.u, jtime, Tol, Maxit, HobCDF(0, &pars), HobCDF(pars.y-pars.t, &pars));

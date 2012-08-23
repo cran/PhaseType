@@ -1,7 +1,11 @@
+PhaseType 0.1.1
+===============
+
+ * Minor fix because of incorrect calls into private R API.
+
 PhaseType 0.1.0
 ===============
 
  * First public release
  * phtMCMC() function for Bayesian inference on dense CTMC generator
  * phtMCMC2() function for Bayesian inference on structured CTMC generator
-

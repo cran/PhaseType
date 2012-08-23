@@ -2,7 +2,7 @@
 #include <Rmath.h>
 #include <R_ext/BLAS.h>
 #include <R_ext/Lapack.h>
-#include <R_ext/Applic.h>
+//#include <R_ext/Applic.h>
 #include "utility.h"
 #include "Simulate_AbsCTMC_eq_Aslett_ECS.h"
 #include "Simulate_AbsCTMC_gt_Aslett_DCS.h"
@@ -247,7 +247,7 @@ void LJMA_samplechain_Aslett2(double *y, double *pi, double *S, double *s, doubl
 		}
 		Tol = 0.0;
 		Maxit = 10000;
-		t += d = R_zeroin(0.0, y_t, &LJMA_dotProd, &pars, &Tol, &Maxit);
+		t += d = Find0(0.0, y_t, &LJMA_dotProd, &pars, &Tol, &Maxit);
 		//Rprintf("U=%lf, Tol=%e, Maxit=%d\n", pars.U, Tol, Maxit);
 		
 		// Make the state jump

@@ -45,3 +45,5 @@ int LJMA_inverse(double *A, int *n, int *workI);
 
 int LJMA_eigen(int *n, double *S, double *evals, double *Q, double *Qinv, double *workD, int *workI);
 
+double Find0(double ax, double bx, double (*f)(double, void *), void *info, double *Tol, int *Maxit);
+double Find02(double ax, double bx, double fa, double fb, double (*f)(double, void *), void *info, double *Tol, int *Maxit);
