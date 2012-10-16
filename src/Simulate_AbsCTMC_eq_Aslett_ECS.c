@@ -2,8 +2,8 @@
 #include <Rmath.h>
 #include <R_ext/BLAS.h>
 #include <R_ext/Lapack.h>
-//#include <R_ext/Applic.h>
 #include "utility.h"
+#include "LJMA_arms.h"
 #include "Simulate_AbsCTMC_eq_Aslett_ECS.h"
 #include "Simulate_AbsCTMC_gt_Aslett_DCS.h"
 
@@ -135,6 +135,41 @@ double LJMA_probAbsorb(double y_t, int j, double *S, double *Q, double *evals, d
 	//return(num/den);
 }
 
+// Dot product to be root found on
+typedef struct ECS_dens_pars_ {
+	int j;
+	double y_t;
+	double *p;
+	double *S;
+	double *Q;
+	double *evals;
+	double *Qinv_s;
+	int n;
+	double *workD;
+} ECS_dens_pars;
+double LJMA_ECS_dens(double d, void *par) {
+	ECS_dens_pars *pars;
+	pars = (ECS_dens_pars *) par;
+	
+	const char transT = 'T'; const double oneD = 1.0, zeroD = 0.0; const int oneI = 1.0;
+	
+	double *p;
+	p = pars->workD; pars->workD += pars->n;
+	
+	// p <- p_j^T %*% Q
+	F77_CALL(dgemv)(&transT, &(pars->n), &(pars->n), &oneD, pars->Q, &(pars->n), pars->p, &oneI, &zeroD, p, &oneI);
+	// p <- pi %*% Q %*% exp(L*y)
+	for(int i=0; i<pars->n; i++) {
+		p[i] *= exp((pars->evals)[i]*(pars->y_t-d));
+	}
+	// tmp <- pi %*% Q %*% exp(L*y) %*% Qinv_s
+	double term1 = 0.0;
+	for(int i=0; i<pars->n; i++) {
+		term1 += p[i] * (pars->Qinv_s)[i];
+	}
+	return(log(term1)+(pars->S)[pars->j + pars->j*pars->n]*d);
+}
+
 
 //// Sample a chain conditional on absorbing at an observation, returning only sufficient statistics of the chain
 // y (input)
@@ -170,14 +205,17 @@ double LJMA_probAbsorb(double y_t, int j, double *S, double *Q, double *evals, d
 void LJMA_samplechain_Aslett2(double *y, double *pi, double *S, double *s, double *Q, double *evals, double *Qinv_s, int *n, double *PjQSjjLinv, double *evals_Sjj, double *P, double *res_z, int *res_B, int *res_N, double *workD) {
 	LJMA_GetRNGstate();
 
-	dotProd_pars pars;
-	pars.PjQSjjLinv = PjQSjjLinv;
-	pars.evals_Sjj = evals_Sjj;
-	pars.diagConst = workD; workD += *n;
-	pars.Ly_t = workD; workD += *n;
-	pars.evals = evals;
-	pars.Qinv_s = Qinv_s;
-	pars.n = *n;
+//	dotProd_pars pars;
+//	pars.PjQSjjLinv = PjQSjjLinv;
+//	pars.evals_Sjj = evals_Sjj;
+//	pars.diagConst = workD; workD += *n;
+//	pars.Ly_t = workD; workD += *n;
+//	pars.evals = evals;
+//	pars.Qinv_s = Qinv_s;
+//	pars.n = *n;
+	
+	ECS_dens_pars pars2;
+
 	
 	// Initialise output vars
 	*res_B = 0;
@@ -230,25 +268,84 @@ void LJMA_samplechain_Aslett2(double *y, double *pi, double *S, double *s, doubl
 		 */		
 		
 		// Choose sojourn time
-		pars.U = runif(0.0, 1.0);
-		pars.j = j;
-		pars.xi = -S[j + j * *n];
-		for(i=0; i<*n; i++) {
-			//pars.eLy_t[i] = exp(evals[i]*y_t); // Non-log scale
-			pars.Ly_t[i] = evals[i]*y_t;
-			//pars.diagConst[i] = (pars.U-1.0)*pars.eLy_t[i] - pars.U*exp(-y_t*pars.xi); // Non-log scale pre changing eLy_t
-			//pars.diagConst[i] = (pars.U-1.0)*exp(pars.Ly_t[i]) - pars.U*exp(-y_t*pars.xi); // Non-log scale
-			if( evals_Sjj[i + j * *n] != 0.0 ) {
-				pars.diagConst[i] = -exp(log(1.0-pars.U)+pars.Ly_t[i]) - exp(log(pars.U)-y_t*pars.xi); // log scale
-			} else {
-				pars.diagConst[i] = -y_t*pars.U*exp(pars.Ly_t[i]);
-			}
-			//Rprintf("state %d, Ly_t = %e, diagConst = %e\n", i+1, pars.Ly_t[i], pars.diagConst[i]);
-		}
-		Tol = 0.0;
-		Maxit = 10000;
-		t += d = Find0(0.0, y_t, &LJMA_dotProd, &pars, &Tol, &Maxit);
+//		pars.U = runif(0.0, 1.0);
+//		pars.j = j;
+//		pars.xi = -S[j + j * *n];
+//		for(i=0; i<*n; i++) {
+//			//pars.eLy_t[i] = exp(evals[i]*y_t); // Non-log scale
+//			pars.Ly_t[i] = evals[i]*y_t;
+//			//pars.diagConst[i] = (pars.U-1.0)*pars.eLy_t[i] - pars.U*exp(-y_t*pars.xi); // Non-log scale pre changing eLy_t
+//			//pars.diagConst[i] = (pars.U-1.0)*exp(pars.Ly_t[i]) - pars.U*exp(-y_t*pars.xi); // Non-log scale
+//			if( evals_Sjj[i + j * *n] != 0.0 ) {
+//				pars.diagConst[i] = -exp(log(1.0-pars.U)+pars.Ly_t[i]) - exp(log(pars.U)-y_t*pars.xi); // log scale
+//			} else {
+//				pars.diagConst[i] = -y_t*pars.U*exp(pars.Ly_t[i]);
+//			}
+//			//Rprintf("state %d, Ly_t = %e, diagConst = %e\n", i+1, pars.Ly_t[i], pars.diagConst[i]);
+//		}
+//		Tol = 0.0;
+//		Maxit = 10000;
+//		t += d = Find0(0.0, y_t, &LJMA_dotProd, &pars, &Tol, &Maxit);
 		//Rprintf("U=%lf, Tol=%e, Maxit=%d\n", pars.U, Tol, Maxit);
+
+// ******************************************************************
+		
+		for(i=0; i<*n; i++) {
+			p[i] = S[j + i * *n]/(-S[j + j * *n]);
+		}
+		p[j] = 0.0;
+		
+		pars2.j = j;
+		pars2.y_t = y_t;
+		pars2.p = p;
+		pars2.S = S;
+		pars2.Q = Q;
+		pars2.evals = evals;
+		pars2.Qinv_s = Qinv_s;
+		pars2.n = *n;
+		pars2.workD = workD;
+				
+		double xinit[4], xl, xr, convex, xprev, xsamp, qcent, xcent;
+		int info, ninit, npoint, dometrop, nsamp, ncent, neval;
+		
+		//xinit[3] = *y;
+		//while(!isfinite(LJMA_condjumpdens_ars(xinit[3], &pars))) {
+		//	xinit[3] = log(xinit[3]);
+		//}
+		//xinit[0] = xinit[3]/4.0;
+		xinit[0] = (y_t)/1e6;
+		xinit[1] = (y_t)/3.0;
+		xinit[2] = xinit[1]*2.0;
+		xinit[3] = y_t - xinit[0];
+		ninit = 4;
+		
+		xl = 0.0;
+		xr = y_t;
+		
+		convex = 1.0;
+		npoint = 100;
+		dometrop = 1;
+		xprev = 0.0;
+		xsamp = 0.0;
+		nsamp = 1;
+		qcent = 0.0;
+		xcent = 0.0;
+		ncent = 0;
+		neval = 0;
+		
+		double (*myfunc)(double, void*);
+		myfunc = &LJMA_ECS_dens;
+		
+		info = arms(xinit, ninit, &xl, &xr, myfunc, &pars2, &convex, npoint, dometrop, &xprev, &xsamp, nsamp, &qcent, &xcent, ncent, &neval);
+		if(info != 0) {
+			Rprintf("Error (LJMA_samplechain_Aslett2): ARMS failed, code=%d\n", info);
+		}
+		t += d = xsamp;
+		
+		
+		
+// ******************************************************************
+		
 		
 		// Make the state jump
 		LJMA_moveMass(p, y_t-d, j, P, Q, evals, Qinv_s, *n, workD);

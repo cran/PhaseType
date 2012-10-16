@@ -58,7 +58,7 @@ If you want to specify structure on your generator (for example, to model a stoc
   \item{MHit}{the number of iterations used if \code{method="MHRS"}}
 }
 \references{
-Bladt, M., Gonzalez, A. & Lauritzen, S. L. (2003), \sQuote{The estimation of phase-type related functionals using Markov chain Monte Carlo methods}, \emph{Scandinavian Journal of Statistics} \bold{2003}(4), 280-300.
+Bladt, M., Gonzalez, A. and Lauritzen, S. L. (2003), \sQuote{The estimation of Phase-type related functionals using Markov chain Monte Carlo methods}, \emph{Scandinavian Actuarial Journal} 2003(4), 280-300.
 }
 \author{
 Louis J.M. Aslett \email{louis@maths.tcd.ie} (\url{http://www.louisaslett.com/})

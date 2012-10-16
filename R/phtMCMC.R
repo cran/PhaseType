@@ -18,6 +18,10 @@ phtMCMC = function(x, states, beta, nu, zeta, n, mhit=1, resume=NULL, silent=FAL
 	T <- cbind(T, paste("s", 1:states, sep = ""))
 	T <- rbind(T, rep(0, states+1))
 	diag(T) <- 0
+  
+	# Check beta
+	if(length(beta) != states) stop("beta should be a vector of length ", states, " for the generator specified.")
+	if(sum(beta<0) > 0) stop("beta is not a valid parameter of a Dirichlet distribution.\n    [Hint: every element must be non-negative]\n\n")
 	
 	# Create names for nu and zeta (after making zeta the right size to reuse C code)
 	nu <- as.list(nu)
@@ -77,7 +81,7 @@ phtMCMC = function(x, states, beta, nu, zeta, n, mhit=1, resume=NULL, silent=FAL
 	methodNum <- sum(methodKey[unique(method)])
 	
 	# Run MCMC
-	res <- .C("LJMA_Gibbs", it=as.integer(n), mhit=as.integer(mhit), method=as.integer(methodNum), n=as.integer(dimT-1), m=as.integer(length(varNames)), nu=as.double(nu), zeta=as.double(zeta), T=as.integer(TN), y=as.double(x), l=as.integer(length(x)), censored=as.integer(censored), start=as.double(start), silent=as.integer(silent), res=as.double(ret))
+	res <- .C("LJMA_Gibbs", it=as.integer(n), mhit=as.integer(mhit), method=as.integer(methodNum), n=as.integer(dimT-1), m=as.integer(length(varNames)), nu=as.double(nu), zeta=as.double(zeta), T=as.integer(TN), C=as.double(matrix(1.0, nrow=dimT, ncol=dimT)), y=as.double(x), l=as.integer(length(x)), censored=as.integer(censored), start=as.double(start), silent=as.integer(silent), res=as.double(ret))
 	
 	if(!is.null(resume)) {
 		ret <- rbind(resume[-dim(resume)[1],], matrix(res$res, nrow=n, ncol=length(varNames)))

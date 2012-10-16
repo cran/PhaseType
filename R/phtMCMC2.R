@@ -1,4 +1,4 @@
-phtMCMC2 = function(x, T, beta, nu, zeta, n, censored=rep(FALSE, length(x)), method="ECS", mhit=1, resume=NULL, silent=FALSE) {
+phtMCMC2 = function(x, T, beta, nu, zeta, n, censored=rep(FALSE, length(x)), C=matrix(1.0, nrow=dim(T)[1], ncol=dim(T)[2]), method="ECS", mhit=1, resume=NULL, silent=FALSE) {
 	# Ensure ordered by var name
 	nu <- nu[sort(names(nu))]
 	zeta <- zeta[sort(names(zeta))]
@@ -15,7 +15,15 @@ phtMCMC2 = function(x, T, beta, nu, zeta, n, censored=rep(FALSE, length(x)), met
 		stop("diagonal of matrix of variables must be zeros\n    [Hint: this is just because the diagonal of a continuous-time Markov chain generator is fully specified by the off-diagonal entries and therefore is not part of the inferential procedure]\n\n")
 	if(length(unique(T[dimT,])) != 1 || unique(T[dimT,]) != "0")
 		stop("last row of matrix of variables must represent absorbing state (and so be all zeros)\n    [Hint: this is just a formatting requirement ... the absorbing state can always be made the last state without loss of generality]\n\n")
-
+	
+	# Check beta
+	if(length(beta) != dimT-1) stop("beta should be a vector of length ", dimT-1, " for the generator specified.")
+  if(sum(beta<0) > 0) stop("beta is not a valid parameter of a Dirichlet distribution.\n    [Hint: every element must be non-negative]\n\n")
+	
+	# Check C well formed
+	if(sum(dim(C)==dimT) < 2)
+		stop("dimension of C must match dimension of T\n	[Hint: C is the matrix of constant multiples of parameter values]\n\n")
+	
 	# Extract variable names
 	varNames <- sort(unique(c(T)))
 	varNames <- subset(varNames, varNames!="0")
@@ -63,7 +71,7 @@ phtMCMC2 = function(x, T, beta, nu, zeta, n, censored=rep(FALSE, length(x)), met
 	methodNum <- sum(methodKey[unique(method)])
 	
 	# Run MCMC
-	res <- .C("LJMA_Gibbs", it=as.integer(n), mhit=as.integer(mhit), method=as.integer(methodNum), n=as.integer(dimT-1), m=as.integer(length(varNames)), nu=as.double(nu), zeta=as.double(zeta), T=as.integer(TN), y=as.double(x), l=as.integer(length(x)), censored=as.integer(censored), start=as.double(start), silent=as.integer(silent), res=as.double(ret))
+	res <- .C("LJMA_Gibbs", it=as.integer(n), mhit=as.integer(mhit), method=as.integer(methodNum), n=as.integer(dimT-1), m=as.integer(length(varNames)), nu=as.double(nu), zeta=as.double(zeta), T=as.integer(TN), C=as.double(C), y=as.double(x), l=as.integer(length(x)), censored=as.integer(censored), start=as.double(start), silent=as.integer(silent), res=as.double(ret))
 	
 	if(!is.null(resume)) {
 		ret <- rbind(resume[-dim(resume)[1],], matrix(res$res, nrow=n, ncol=length(varNames)))

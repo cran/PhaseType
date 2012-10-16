@@ -223,7 +223,7 @@ double Find0(			/* An estimate of the root */
 			 int *Maxit)				/* Max # of iterations */
 {
     double fa = (*f)(ax, info);
-    double fb = (*f)(bx, info);
+    double fb = (*f)(bx, info); //Rprintf("L(%lf): %e, R(%lf): %e\n",ax,fa,bx,fb);
     return Find02(ax, bx, fa, fb, f, info, Tol, Maxit);
 }
 

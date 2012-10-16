@@ -7,7 +7,9 @@ Markov-chain Monte Carlo (MCMC) sampler for Bayesian inference on Phase-type mod
 Consider an m+1 state continuous-time Markov chain (CTMC) where the final (m+1 st) state is absorbing.  Then, given data consisting of first passage times to the last state, this function performs Bayesian inference on the rate parameters of the latent continuous-time Markov chain where the generator has some fixed structure.
 }
 \usage{
-phtMCMC2(x, T, beta, nu, zeta, n, censored=rep(FALSE, length(x)), method="ECS", mhit=1, resume=NULL, silent=FALSE)
+phtMCMC2(x, T, beta, nu, zeta, n, censored=rep(FALSE, length(x)),
+         C=matrix(1.0, nrow=dim(T)[1], ncol=dim(T)[2]), method="ECS", mhit=1,
+         resume=NULL, silent=FALSE)
 }
 \arguments{
   \item{x}{
@@ -31,8 +33,15 @@ phtMCMC2(x, T, beta, nu, zeta, n, censored=rep(FALSE, length(x)), method="ECS", 
   \item{censored}{
     a vector of \code{TRUE/FALSE}s of the same length as \code{x} indicating whether the corresponding observation is censored.
 }
+  \item{C}{
+    a numeric matrix of the same dimensions as T which specifies any constant scalar multiples of the parameters in T.  Entries must be non-negative.
+}
   \item{method}{
-    the sampling method to use for the latent stochastic process.  \code{method="ECS"} is Exact Conditional Sampling as described in Aslett and Wilson (2011); \code{method="MHRS"} is Metropolis-Hastings + Rejection Sampling as in the original work of Bladt et al. (2003).
+    the sampling method to use for the latent stochastic process:
+    
+    \code{method="ECS"} is Exact Conditional Sampling as described in Aslett and Wilson (2011);
+    
+    \code{method="MHRS"} is Metropolis-Hastings + Rejection Sampling as in the original work of Bladt et al. (2003).
 % UNTESTED SO EXCLUDED FROM DOCS; and \code{method="DCS"} is a novel adaptation of the Direct Conditional Sampling technique described by Hobolth (2009).
 }
   \item{mhit}{
@@ -67,9 +76,9 @@ The generator matrix \code{T} is specified as a matrix containing strings (ie te
   \item{MHit}{the number of iterations used if \code{method="MHRS"}}
 }
 \references{
-Aslett, L. J. M. & Wilson, S. P. (2011), Markov chain Monte Carlo for inference on Phase-type models, Technical report, Trinity College Dublin (\emph{pending journal submission}).
+Aslett, L. J. M. and Wilson, S. P. (2011), \sQuote{Markov chain Monte Carlo for inference on Phase-type models}, ISI 2011 Proceedings, (\url{http://www.louisaslett.com/dl/Aslett_LJM_Markov_chain_Monte_Carlo_for_Inference_on_Phase-type_Models_ISI_proceedings.pdf}).
 
-Bladt, M., Gonzalez, A. & Lauritzen, S. L. (2003), \sQuote{The estimation of phase-type related functionals using Markov chain Monte Carlo methods}, \emph{Scandinavian Journal of Statistics} \bold{2003}(4), 280-300.
+Bladt, M., Gonzalez, A. and Lauritzen, S. L. (2003), \sQuote{The estimation of Phase-type related functionals using Markov chain Monte Carlo methods}, \emph{Scandinavian Actuarial Journal} 2003(4), 280-300.
 }
 \author{
 Louis J.M. Aslett \email{louis@maths.tcd.ie} (\url{http://www.louisaslett.com/})

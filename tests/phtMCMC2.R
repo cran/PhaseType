@@ -18,4 +18,4 @@ nu <- list("R"=180, "F"=24)
 # Gamma prior: reciprocal scale hyperparameters (one per model parameter)
 zeta <- c("R"=16,"F"=16)
 # Perform 6 MCMC iterations
-print(phtMCMC2(x, T, dirpi, nu, zeta, 6), digits=2)
+print(phtMCMC2(x, T, dirpi, nu, zeta, 20), digits=2)

@@ -37,6 +37,7 @@
 
 typedef struct p_into_double_ {
 	double *data;
+	double dataFixed;
 	struct p_into_double_ *next;
 } p_into_double;
 typedef struct p_into_int_ {
@@ -51,12 +52,16 @@ p_into_int *listAddI(p_into_int *p, int *elt) {
 	newNode->data = elt;
 	return p;
 }
-p_into_double *listAddD(p_into_double *p, double *elt) {
+p_into_double *listAddDD(p_into_double *p, double *elt, double eltFixed) {
 	p_into_double *newNode = (p_into_double *) R_alloc(1, sizeof(p_into_double));
 	newNode->next = p;
 	p = newNode;
 	newNode->data = elt;
+	newNode->dataFixed = eltFixed;
 	return p;
+}
+p_into_double *listAddD(p_into_double *p, double *elt) {
+	return listAddDD(p, elt, 1.0);
 }
 
 // Bit masks for sampling method
@@ -80,6 +85,8 @@ static int METHOD_DCS = 0x4; // DCS (Aslett changes to Hobolth)
 //     m dimensional vector of zeta prior parameters
 // T (input)
 //     form of the matrix to infer, coded by integer (0=fix at zero, 1+=variable index in res)
+// C (input)
+//     matrix of constant multiples of the parameters in T (should just be 1.0 in every element if unsure)
 // y (input)
 //     l dimensional array of absorption times to be conditioned on
 // l (input)
@@ -93,7 +100,7 @@ static int METHOD_DCS = 0x4; // DCS (Aslett changes to Hobolth)
 // res (output)
 //     it x m matrix to hold the samples for each variable
 //
-void LJMA_Gibbs(int *it, int *mhit, int *method, int *n, int *m, double *nu, double *zeta, int *T, double *y, int *l, int *censored, double *start, int *silent, double *res) {
+void LJMA_Gibbs(int *it, int *mhit, int *method, int *n, int *m, double *nu, double *zeta, int *T, double *C, double *y, int *l, int *censored, double *start, int *silent, double *res) {
 	LJMA_GetRNGstate();
 	
 	//static const char bss[] = "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b";
@@ -152,16 +159,16 @@ void LJMA_Gibbs(int *it, int *mhit, int *method, int *n, int *m, double *nu, dou
 	int *workI, workIsize = 0, workDsize = 0;
 	// ---> FIX THIS BY RECOUNTING MEMORY USAGE BY SAMPLING METHOD <--
 	if((*method & METHOD_MHRS) > 0) {
-		workDsize = (100 < workDsize) ? workDsize : 100;
-		workIsize = (100 < workIsize) ? workIsize : 100;
+		workDsize = (100000 < workDsize) ? workDsize : 100000;
+		workIsize = (100000 < workIsize) ? workIsize : 100000;
 	}
 	if((*method & METHOD_ECS) > 0) {
-		workDsize = (100 < workDsize) ? workDsize : 100;
-		workIsize = (100 < workIsize) ? workIsize : 100;
+		workDsize = (100000 < workDsize) ? workDsize : 100000;
+		workIsize = (100000 < workIsize) ? workIsize : 100000;
 	}
 	if((*method & METHOD_DCS) > 0) {
-		workDsize = (100 < workDsize) ? workDsize : 100;
-		workIsize = (100 < workIsize) ? workIsize : 100;
+		workDsize = (100000 < workDsize) ? workDsize : 100000;
+		workIsize = (100000 < workIsize) ? workIsize : 100000;
 	}
 	workD = (double *) R_alloc(workDsize, sizeof(double));
 	workI = (int *) R_alloc(workIsize, sizeof(int));
@@ -204,17 +211,17 @@ void LJMA_Gibbs(int *it, int *mhit, int *method, int *n, int *m, double *nu, dou
 			if(T[i + j * (*n+1)] == 0) {
 				TT[i + j * (*n+1)] = 0.0;
 			} else {
-				rsum -= TT[i + j * (*n+1)] = res[0 + (T[i + j * (*n+1)]-1) * *it];
+				rsum -= TT[i + j * (*n+1)] = res[0 + (T[i + j * (*n+1)]-1) * *it] * C[i + j * (*n+1)];
 				if(j == *n) {
 					NbyVar[T[i + j * (*n+1)]-1] = listAddI(NbyVar[T[i + j * (*n+1)]-1], &N[i + i * *n]);
-					sbyVar[T[i + j * (*n+1)]-1] = listAddD(sbyVar[T[i + j * (*n+1)]-1], &s[i]);
+					sbyVar[T[i + j * (*n+1)]-1] = listAddDD(sbyVar[T[i + j * (*n+1)]-1], &s[i], C[i + j * (*n+1)]);
 				} else {
 					NbyVar[T[i + j * (*n+1)]-1] = listAddI(NbyVar[T[i + j * (*n+1)]-1], &N[i + j * *n]);
-					SbyVar[T[i + j * (*n+1)]-1] = listAddD(SbyVar[T[i + j * (*n+1)]-1], &S[i + j * *n]);
+					SbyVar[T[i + j * (*n+1)]-1] = listAddDD(SbyVar[T[i + j * (*n+1)]-1], &S[i + j * *n], C[i + j * (*n+1)]);
 				}
-				zbyVar[T[i + j * (*n+1)]-1] = listAddD(zbyVar[T[i + j * (*n+1)]-1], &z[i]); // For computing sum of z's
-				TTbyVar[T[i + j * (*n+1)]-1] = listAddD(TTbyVar[T[i + j * (*n+1)]-1], &TT[i + j * (*n+1)]); // For filling TT matrix
-				TTbyVar[T[i + j * (*n+1)]-1] = listAddD(TTbyVar[T[i + j * (*n+1)]-1], &TT[i + j * (*n+1)]); // For filling TT matrix
+				zbyVar[T[i + j * (*n+1)]-1] = listAddDD(zbyVar[T[i + j * (*n+1)]-1], &z[i], C[i + j * (*n+1)]); // For computing sum of z's
+				TTbyVar[T[i + j * (*n+1)]-1] = listAddDD(TTbyVar[T[i + j * (*n+1)]-1], &TT[i + j * (*n+1)], C[i + j * (*n+1)]); // For filling TT matrix
+//				TTbyVar[T[i + j * (*n+1)]-1] = listAddD(TTbyVar[T[i + j * (*n+1)]-1], &TT[i + j * (*n+1)]); // For filling TT matrix
 				TTDiag[i] = listAddD(TTDiag[i], &TT[i + j * (*n+1)]);
 			}
 		}
@@ -341,10 +348,16 @@ void LJMA_Gibbs(int *it, int *mhit, int *method, int *n, int *m, double *nu, dou
 			p_into_double *pD;
 			pD = zbyVar[i];
 			while(pD!=NULL) {
-				zsum[i] += *(pD->data);
+				zsum[i] += *(pD->data) / pD->dataFixed;
 				pD = pD->next;
 			}
 		}
+//		for(i=0; i<*n; i++) Rprintf("%lf ",z[i]);
+//		Rprintf("\n");
+//		for(i=0; i<*m; i++) Rprintf("%lf ",zsum[i]);
+//		Rprintf("\n");
+//		for(i=0; i<*m; i++) Rprintf("%d ",Nsum[i]);
+//		Rprintf("\n");
 		
 		// Fifth: draw from posteriors
 		double tmp;
@@ -354,17 +367,17 @@ void LJMA_Gibbs(int *it, int *mhit, int *method, int *n, int *m, double *nu, dou
 			p_into_double *pD;
 			pD = TTbyVar[i];
 			while(pD!=NULL) {
-				*(pD->data) = tmp;
+				*(pD->data) = tmp * pD->dataFixed;
 				pD = pD->next;
 			}
 			pD = SbyVar[i];
 			while(pD!=NULL) {
-				*(pD->data) = tmp;
+				*(pD->data) = tmp * pD->dataFixed;
 				pD = pD->next;
 			}
 			pD = sbyVar[i];
 			while(pD!=NULL) {
-				*(pD->data) = tmp;
+				*(pD->data) = tmp * pD->dataFixed;
 				pD = pD->next;
 			}
 		}
@@ -381,6 +394,13 @@ void LJMA_Gibbs(int *it, int *mhit, int *method, int *n, int *m, double *nu, dou
 			TT[i + i * (*n+1)] = tmp;
 			S[i + i * *n] = tmp;
 		}
+//		for(i=0; i<(*n+1); i++) {
+//			for(j=0; j<(*n+1); j++) {
+//				Rprintf("%lf ", TT[i + j * (*n+1)]);
+//			}
+//			Rprintf("\n");
+//		}
+//		Rprintf("\n");
 	}
 	
 	Rprintf("\n\nCompleted MCMC run, returning results ...\n"); LJMA_GUI();
