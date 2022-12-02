@@ -1,3 +1,15 @@
+PhaseType 0.2.0
+===============
+
+ * Multiple fixes to enable reinclusion on CRAN.
+ * In particular dependence on archived HI package removed by bringing in C code
+   for ARMS originally written by Wally Gilks, with updates by Louis Aslett to
+   pass strict warning and CRAN checks. Previously this code was accessed via
+   the HI package.
+ * Updates to Fortran BLAS/LAPACK calls to satisfy new string passing
+   requirements which will be mandatory from R 4.3.0, per documentation at:
+   https://cran.r-project.org/doc/manuals/r-release/R-exts.html#Fortran-character-strings
+
 PhaseType 0.1.3
 ===============
 

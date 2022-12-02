@@ -3,6 +3,7 @@
 #include <R_ext/Utils.h>
 #include <R_ext/BLAS.h>
 #include <R_ext/Lapack.h>
+#include "PHT_MCMC_Aslett.h"
 #include "utility.h"
 #include "Simulate_AbsCTMC_gt_Aslett_DCS.h"
 #include "Simulate_AbsCTMC_eq_Aslett_DCS.h"
@@ -102,11 +103,11 @@ static int METHOD_DCS = 0x4; // DCS (Aslett changes to Hobolth)
 //
 void LJMA_Gibbs(int *it, int *mhit, int *method, int *n, int *m, double *nu, double *zeta, int *T, double *C, double *y, int *l, int *censored, double *start, int *silent, double *res) {
 	LJMA_GetRNGstate();
-	
+
 	//static const char bss[] = "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b";
 	//char b[250];
 	//int bs=0;
-	
+
 	// Setup general storage space
 	double rsum, *pi, *TT, *S, *s, *z, *zsum, *P, *Pfull;
 	pi = (double *) R_alloc(*n, sizeof(double));
@@ -122,7 +123,7 @@ void LJMA_Gibbs(int *it, int *mhit, int *method, int *n, int *m, double *nu, dou
 	N = (int *) R_alloc(*n * *n, sizeof(int));
 	B = (int *) R_alloc(*n, sizeof(int));
 	Nsum = (int *) R_alloc(*m, sizeof(int));
-		
+
 	// Setup high-speed linked list pointer space
 	p_into_int **NbyVar;
 	NbyVar = (p_into_int **) R_alloc(*m, sizeof(p_into_int*)); for(int i=0; i<*m; i++) NbyVar[i] = NULL;
@@ -132,7 +133,7 @@ void LJMA_Gibbs(int *it, int *mhit, int *method, int *n, int *m, double *nu, dou
 	SbyVar = (p_into_double **) R_alloc(*m, sizeof(p_into_double*)); for(int i=0; i<*m; i++) SbyVar[i] = NULL;
 	sbyVar = (p_into_double **) R_alloc(*m, sizeof(p_into_double*)); for(int i=0; i<*m; i++) sbyVar[i] = NULL;
 	TTDiag = (p_into_double **) R_alloc(*n+1, sizeof(p_into_double*)); for(int i=0; i<*n+1; i++) TTDiag[i] = NULL;
-	
+
 	// Extra sampling specific storage;
 	double *Q=NULL, *Qinv=NULL, *evals=NULL, *e=NULL, *Qinv_1=NULL, *Qinv_s=NULL, *b=NULL, *Qinv_b=NULL;
 	double oneD = 1.0, zeroD = 0.0;
@@ -153,7 +154,7 @@ void LJMA_Gibbs(int *it, int *mhit, int *method, int *n, int *m, double *nu, dou
 		Qinv_b = (double *) R_alloc(*n, sizeof(double)); // Do we need these really still?
 		b = (double *) R_alloc(*n, sizeof(double));
 	}
-	
+
 	// Setup workspace storage
 	double *workD;
 	int *workI, workIsize = 0, workDsize = 0;
@@ -172,25 +173,25 @@ void LJMA_Gibbs(int *it, int *mhit, int *method, int *n, int *m, double *nu, dou
 	}
 	workD = (double *) R_alloc(workDsize, sizeof(double));
 	workI = (int *) R_alloc(workIsize, sizeof(int));
-	
+
 	if(((*method & METHOD_ECS) | (*method & METHOD_DCS)) > 0) {
 		// LAPACK workspace ... make NULL calls to figure out optimal workspace size for speed
 		char balanc = 'B', jobvl = 'V', jobvr = 'V', sense = 'B'; int lwork = -1, info; double work;
-		F77_CALL(dgeevx)(&balanc, &jobvl, &jobvr, &sense, n, NULL, n, NULL, NULL, NULL, n, NULL, n, NULL, NULL, NULL, NULL, NULL, NULL, &work, &lwork, NULL, &info);
+		F77_CALL(dgeevx)(&balanc, &jobvl, &jobvr, &sense, n, NULL, n, NULL, NULL, NULL, n, NULL, n, NULL, NULL, NULL, NULL, NULL, NULL, &work, &lwork, NULL, &info FCONE FCONE FCONE FCONE);
 		LJMA_LAPACK_lwork = (int) work;
 		F77_CALL(dgetri)(n, NULL, n, NULL, &work, &lwork, &info);
 		if((int) work > LJMA_LAPACK_lwork) LJMA_LAPACK_lwork = (int) work;
 		LJMA_LAPACK_work = (double *) R_alloc(LJMA_LAPACK_lwork, sizeof(double));
 	}
-	
+
 	// Step 0 - draw from priors
 	Rprintf("Setting up Gibbs run ...\n"); LJMA_GUI();
-	
+
 	// ******************** FIX ME ********************
 	*pi = 1.0;
 	for(int i=1; i<*n; i++) pi[i] = 0.0;
 	// ******************** FIX ME ********************
-	
+
 	if(*start < 0) {
 		for(int i=0; i<*m; i++) {
 			if(nu[i] > 1) { // if k>1 can choose modal value of prior
@@ -259,7 +260,7 @@ void LJMA_Gibbs(int *it, int *mhit, int *method, int *n, int *m, double *nu, dou
 		for(int i=0; i<*n; i++) {
 			Rprintf(" %.3lf ", s[i]);
 		}*/
-	
+
 	Rprintf("Starting phase-type MCMC sampler ...\n\nBegining processing ..."); LJMA_GUI();
 	if(*silent) {
 		Rprintf(" silent processing selected, there will be no further feedback until MCMC run complete"); LJMA_GUI();
@@ -271,7 +272,7 @@ void LJMA_Gibbs(int *it, int *mhit, int *method, int *n, int *m, double *nu, dou
 		if(!*silent) {
 			Rprintf("\rProcessing iteration %d of %d (%.1lf%%)\r", iter+1, *it, (100.0*(iter+1)) / *it); LJMA_GUI();
 		}
-		
+
 		// Step 1 - simulate the sufficient statistics of the unobserved processes
 		// First: compute the embedded chain transition probabilities
 		// --> FIX: this isn't needed for DCS <--
@@ -294,7 +295,7 @@ void LJMA_Gibbs(int *it, int *mhit, int *method, int *n, int *m, double *nu, dou
 			//Rprintf("%lf ", Pfull[i + *n * *n]);
 			//Rprintf("\n");
 		}
-		
+
 		// Second: check if we should allow reverse simulation (if requested) [NB: starting dist varys by time, so can't precompute!]
 		// Get stationary dist
 		/*
@@ -314,27 +315,27 @@ void LJMA_Gibbs(int *it, int *mhit, int *method, int *n, int *m, double *nu, dou
 		}
 		out:
 		*/
-		
+
 		// Third: eigen-decompose if necessary
 		if(((*method & METHOD_ECS) | (*method & METHOD_DCS)) > 0) {
 			LJMA_eigen(n, S, evals, Q, Qinv, workD, workI);
 		}
-		
+
 		// Then do the simulation
 		if((*method & METHOD_MHRS) > 0) {
 			LJMA_MHsample_Bladt(y, censored, l, pi, S, s, Pfull, n, mhit, z, B, N, workD, workI);
 		} else if((*method & METHOD_DCS) > 0) {
-			F77_CALL(dgemv)(&transN, n, n, &oneD, Qinv, n, b, &oneI, &zeroD, Qinv_b, &oneI);
+			F77_CALL(dgemv)(&transN, n, n, &oneD, Qinv, n, b, &oneI, &zeroD, Qinv_b, &oneI FCONE);
 			LJMA_MHsample_Hobolth2(y, censored, l, pi, S, s, Q, evals, Qinv_b, b, Qinv, n, mhit, z, B, N, workD, workI);
 		} else if((*method & METHOD_ECS) > 0) {
-			F77_CALL(dgemv)(&transN, n, n, &oneD, Qinv, n, s, &oneI, &zeroD, Qinv_s, &oneI);
-			F77_CALL(dgemv)(&transN, n, n, &oneD, Qinv, n, e, &oneI, &zeroD, Qinv_1, &oneI);
+			F77_CALL(dgemv)(&transN, n, n, &oneD, Qinv, n, s, &oneI, &zeroD, Qinv_s, &oneI FCONE);
+			F77_CALL(dgemv)(&transN, n, n, &oneD, Qinv, n, e, &oneI, &zeroD, Qinv_1, &oneI FCONE);
 			LJMA_MHsample_Aslett2(y, censored, l, pi, S, s, Q, evals, Qinv_s, Qinv_1, P, Pfull, n, z, B, N, workD, workI);
 		} else {
 			Rprintf("CRITICAL ERROR: Unknown sampling method (code = %d)\n\n", *method);
 			continue;
 		}
-		
+
 		// Fourth: compile the stuff together
 		for(i=0; i<*m; i++) {
 			Nsum[i] = 0;
@@ -358,12 +359,12 @@ void LJMA_Gibbs(int *it, int *mhit, int *method, int *n, int *m, double *nu, dou
 //		Rprintf("\n");
 //		for(i=0; i<*m; i++) Rprintf("%d ",Nsum[i]);
 //		Rprintf("\n");
-		
+
 		// Fifth: draw from posteriors
 		double tmp;
 		for(i=0; i<*m; i++) {
 			tmp = res[iter + i * *it] = rgamma(nu[i]+Nsum[i], 1.0/(zeta[i]+zsum[i]));
-			
+
 			p_into_double *pD;
 			pD = TTbyVar[i];
 			while(pD!=NULL) {
@@ -383,14 +384,14 @@ void LJMA_Gibbs(int *it, int *mhit, int *method, int *n, int *m, double *nu, dou
 		}
 		for(i=0; i<*n; i++) {
 			tmp = 0.0;
-			
+
 			p_into_double *pD;
 			pD = TTDiag[i];
 			while(pD!=NULL) {
 				tmp -= *(pD->data);
 				pD = pD->next;
 			}
-			
+
 			TT[i + i * (*n+1)] = tmp;
 			S[i + i * *n] = tmp;
 		}
@@ -402,9 +403,9 @@ void LJMA_Gibbs(int *it, int *mhit, int *method, int *n, int *m, double *nu, dou
 //		}
 //		Rprintf("\n");
 	}
-	
+
 	Rprintf("\n\nCompleted MCMC run, returning results ...\n"); LJMA_GUI();
-	
+
 	LJMA_PutRNGstate();
 }
 

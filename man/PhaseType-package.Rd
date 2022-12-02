@@ -10,7 +10,7 @@ A collection of tools for working with Phase-type Distributions, including sampl
 \tabular{ll}{
 Package: \tab PhaseType\cr
 Type: \tab Package\cr
-Version: \tab 0.1.0\cr
+Version: \tab 0.2.0\cr
 Date: \tab 2011-10-12\cr
 License: \tab GPL-2 | GPL-3\cr
 LazyLoad: \tab yes\cr
@@ -19,10 +19,10 @@ LazyLoad: \tab yes\cr
 %~~ functions ~~
 }
 \author{
-Louis J. M. Aslett, \email{louis@maths.tcd.ie} (\url{http://www.louisaslett.com})
+Louis J. M. Aslett, \email{louis.aslett@durham.ac.uk} (\url{https://www.louisaslett.com})
 }
 \references{
-Aslett, L. J. M. & Wilson, S. P. (2011), Markov chain Monte Carlo for inference on Phase-type models, Technical report, Trinity College Dublin (\emph{pending journal submission}).
+Aslett, L. J. M. (2012), MCMC for Inference on Phase-type and Masked System Lifetime Models. Ph.D. thesis, Trinity College Dublin..
 
 Bladt, M., Gonzalez, A. & Lauritzen, S. L. (2003), \sQuote{The estimation of phase-type related functionals using Markov chain Monte Carlo methods}, \emph{Scandinavian Journal of Statistics} \bold{2003}(4), 280-300.
 }
@@ -64,7 +64,9 @@ n <- 3
 # since starts in stationarity here).  Do more in practise!!
 res1 <- phtMCMC(x, n, dirpi, nu, zeta, 20, mhit=1)
 print(res1)
+\donttest{
 plot(res1)
+}
 
 
 # SECOND: mechanistic model fit (Aslett and Wilson 2011)
@@ -72,7 +74,7 @@ plot(res1)
 dirpi <- c(1, 0, 0)
 
 # Define the structure of the Phase-type generator
-T <- matrix(c(0,"R","R",0,"F",0,0,0,"F",0,0,0,0,"F","F",0), 4)
+TT <- matrix(c(0,"R","R",0,"F",0,0,0,"F",0,0,0,0,"F","F",0), 4)
 
 # Gamma prior: shape hyperparameters (one per model parameter)
 nu <- list("R"=180, "F"=24)
@@ -81,7 +83,9 @@ nu <- list("R"=180, "F"=24)
 zeta <- c("R"=16,"F"=16)
 
 # Perform 20 MCMC iterations.  Do more in practise!!
-res2 <- phtMCMC2(x, T, dirpi, nu, zeta, 20)
+res2 <- phtMCMC2(x, TT, dirpi, nu, zeta, 20)
 print(res2)
+\donttest{
 plot(res2)
+}
 }

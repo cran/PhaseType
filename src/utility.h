@@ -8,7 +8,7 @@ extern int LJMA_counter;
 
 // The next two functions are for allocating the LAPACK work space when calling certain functions directly from R instead of via the outer Gibbs call
 void LJMA_LAPACKspace(int *n);
-void LJMA_LAPACKspaceFree();
+void LJMA_LAPACKspaceFree(void);
 
 // Then we can get at the performance counter here
 void LJMA_setCounter(int *counter);

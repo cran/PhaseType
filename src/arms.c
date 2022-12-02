@@ -1,13 +1,18 @@
-/* adaptive rejection metropolis sampling */
+/*
+ * Adaptive Rejection Metropolis Sampling (ARMS)
+ * Code slightly updated by Louis Aslett, based on the original
+ * research paper implementation by Wally Gilks.
+ * See: http://www1.maths.leeds.ac.uk/~wally.gilks/adaptive.rejection/web_page/Welcome.html#armspart
+ * This eliminates a previous dependency on the HI package which was archived
+ * from CRAN.
+ */
 
-/* *********************************************************************** */
-
-#include           <stdio.h>
-#include           <math.h>
-#include           <stdlib.h>
-#include           <R.h>
-
-/* *********************************************************************** */
+#include "arms.h"
+#include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
+#include <R.h>
+#include "utility.h"
 
 typedef struct point {    /* a point in the x,y plane */
   double x,y;             /* x and y coordinates */
@@ -16,8 +21,6 @@ typedef struct point {    /* a point in the x,y plane */
   int f;                  /* is y an evaluated point of log-density */
   struct point *pl,*pr;   /* envelope points to left and right of x */
 } POINT;
-
-/* *********************************************************************** */
 
 typedef struct envelope {  /* attributes of the entire rejection envelope */
   int cpoint;              /* number of POINTs in current envelope */
@@ -28,15 +31,11 @@ typedef struct envelope {  /* attributes of the entire rejection envelope */
   double *convex;          /* adjustment for convexity */
 } ENVELOPE;
 
-/* *********************************************************************** */
-
 typedef struct funbag { /* everything for evaluating log density          */
   void *mydata;      /* user-defined structure holding data for density */
   double (*myfunc)(double x, void *mydata);
                      /* user-defined function evaluating log density at x */
 } FUNBAG;
-
-/* *********************************************************************** */
 
 typedef struct metropolis { /* for metropolis step */
   int on;            /* whether metropolis is to be used */
@@ -44,30 +43,18 @@ typedef struct metropolis { /* for metropolis step */
   double yprev;      /* current log density at xprev */
 } METROPOLIS;
 
-/* *********************************************************************** */
-
-//#define RAND_MAX 2147483647      /* For Sun4 : remove this for some systems */ 
 #define XEPS  0.00001            /* critical relative x-value difference */
 #define YEPS  0.1                /* critical y-value difference */
 #define EYEPS 0.001              /* critical relative exp(y) difference */
 #define YCEIL 50.                /* maximum y avoiding overflow in exp(y) */
 
-/* *********************************************************************** */
-
 /* declarations for functions defined in this file */
-
-int arms_simple (int ninit, double *xl, double *xr, 
+int arms_simple (int ninit, double *xl, double *xr,
                  double (*myfunc)(double x, void *mydata), void *mydata,
                  int dometrop, double *xprev, double *xsamp);
 
-int arms (double *xinit, int ninit, double *xl, double *xr, 
-          double (*myfunc)(double x, void *mydata), void *mydata,
-          double *convex, int npoint, int dometrop, double *xprev, double *xsamp,
-          int nsamp, double *qcent, double *xcent, int ncent,
-          int *neval);
-
 int initial (double *xinit, int ninit, double xl, double xr, int npoint,
-	     FUNBAG *lpdf, ENVELOPE *env, double *convex, int *neval,
+             FUNBAG *lpdf, ENVELOPE *env, double *convex, int *neval,
              METROPOLIS *metrop);
 
 void sample(ENVELOPE *env, POINT *p);
@@ -90,7 +77,7 @@ double logshift(double y, double y0);
 
 double perfunc(FUNBAG *lpdf, ENVELOPE *env, double x);
 
-double u_random();
+double u_random(void);
 
 /* *********************************************************************** */
 
@@ -110,8 +97,8 @@ int arms_simple (int ninit, double *xl, double *xr,
 
 {
   double xinit[ninit], convex=1.0, qcent, xcent;
-  int err, i, npoint=100, nsamp=1, ncent=0, neval; 
- 
+  int err, i, npoint=100, nsamp=1, ncent=0, neval;
+
   /* set up starting values */
   for(i=0; i<ninit; i++){
     xinit[i] = *xl + (i + 1.0) * (*xr - *xl)/(ninit + 1.0);
@@ -125,7 +112,7 @@ int arms_simple (int ninit, double *xl, double *xr,
 
 /* *********************************************************************** */
 
-int arms (double *xinit, int ninit, double *xl, double *xr, 
+int arms (double *xinit, int ninit, double *xl, double *xr,
 	 double (*myfunc)(double x, void *mydata), void *mydata,
          double *convex, int npoint, int dometrop, double *xprev, double *xsamp,
          int nsamp, double *qcent, double *xcent,
@@ -216,7 +203,7 @@ int arms (double *xinit, int ninit, double *xl, double *xr,
     } else if (i != 0) {
       /* envelope error - violation without metropolis */
       return 2000;
-    }  
+    }
   } while (msamp < nsamp);
 
   /* nsamp points now sampled */
@@ -294,10 +281,10 @@ int initial (double *xinit, int ninit, double xl, double xr, int npoint,
   /* set up space for envelope POINTs */
   env->npoint = npoint;
   //env->p = (POINT *)malloc(npoint*sizeof(POINT));
-  if(env->p == NULL){
+  //if(env->p == NULL){
     /* insufficient space */
-    return 1006;
-  }
+  //  return 1006;
+  //}
 
   /* set up envelope POINTs */
   q = env->p;
@@ -445,7 +432,7 @@ int test(ENVELOPE *env, POINT *p, FUNBAG *lpdf, METROPOLIS *metrop)
 {
   double u,y,ysqueez,ynew,yold,znew,zold,w;
   POINT *ql,*qr;
-  
+
   /* for rejection test */
   u = u_random() * p->ey;
   y = logshift(u,env->ymax);
@@ -472,7 +459,7 @@ int test(ENVELOPE *env, POINT *p, FUNBAG *lpdf, METROPOLIS *metrop)
 
   /* evaluate log density at point to be tested */
   ynew = perfunc(lpdf,env,p->x);
-  
+
   /* perform rejection test */
   if(!(metrop->on) || ((metrop->on) && (y >= ynew))){
     /* update envelope */
@@ -786,6 +773,7 @@ double area(POINT *q)
   double a;
 
   if(q->pl == NULL){
+    a = 0.;
     /* this is leftmost point in envelope */
     REprintf("ERROR (LJMA_arms.c)(1): found erroneous leftmost point in envelope");
   } else if(q->pl->x == q->x){
@@ -847,11 +835,14 @@ double perfunc(FUNBAG *lpdf, ENVELOPE *env, double x)
 
 /* *********************************************************************** */
 
-double u_random()
+double u_random(void)
 
 /* to return a standard uniform random number */
 {
-   return ((double)rand() + 0.5)/((double)RAND_MAX + 1.0);
+  LJMA_GetRNGstate();
+  double x = unif_rand();
+  LJMA_PutRNGstate();
+  return(x);
 }
 
 /* *********************************************************************** */

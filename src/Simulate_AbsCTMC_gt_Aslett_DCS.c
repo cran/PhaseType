@@ -3,7 +3,7 @@
 #include <R_ext/Utils.h>
 #include <R_ext/BLAS.h>
 #include <R_ext/Lapack.h>
-#include "LJMA_arms.h"
+#include "arms.h"
 #include "utility.h"
 #include "Simulate_AbsCTMC_gt_Aslett_DCS.h"
 
@@ -29,13 +29,13 @@ void LJMA_phtcdf_opt(double *x, double *pi_Q, double *evals, double *Qinv_1, int
 		pi_Q_p = pi_Q;
 		evals_p = evals;
 		Qinv_1_p = Qinv_1;
-		
+
 		int i;
 		double result = 0.0;
 		for(i=0; i<*n; i++) {
 			result += *(pi_Q_p++) * exp(*x * *(evals_p++)) * *(Qinv_1_p++);
 		}
-		
+
 		*res = result;
 	} else {
 		*res = 1.0;
@@ -60,7 +60,7 @@ void LJMA_phtcdf_opt(double *x, double *pi_Q, double *evals, double *Qinv_1, int
 // res (output)
 //     stores result here too
 // workD (output)
-//     n element workspace 
+//     n element workspace
 //
 // return: upper tail PHT cdf value
 void LJMA_phtcdf(double *x, double *pi, double *Q, double *evals, double *Qinv_1, int *n, double *res, double *workD) {
@@ -68,12 +68,12 @@ void LJMA_phtcdf(double *x, double *pi, double *Q, double *evals, double *Qinv_1
 		// First, compute pi %*% Q, then we can do the usual
 		double *pi_Q;
 		pi_Q = workD;
-		
+
 		char trans = 'T';
 		double alpha = 1.0, beta = 0.0;
 		int incx = 1, incy = 1;
-		F77_CALL(dgemv)(&trans, n, n, &alpha, Q, n, pi, &incx, &beta, pi_Q, &incy);
-		
+		F77_CALL(dgemv)(&trans, n, n, &alpha, Q, n, pi, &incx, &beta, pi_Q, &incy FCONE);
+
 		LJMA_phtcdf_opt(x, pi_Q, evals, Qinv_1, n, res);
 	} else {
 		*res = 1.0;
@@ -113,17 +113,17 @@ void LJMA_condjumpdens(double *d, double *tnow, int *jnow, double *y, double *S,
 	double *pi1, *pi2;
 	pi1 = workD; workD += *n;
 	pi2 = workD; workD += *n;
-	
+
 	for(int i=0; i<*n; i++) {
 		pi1[i] = P[*jnow + i * *n];
 		pi2[i] = 0.0;
 	}
 	pi2[*jnow] = 1.0;
-	
+
 	// Now compute the conditional jump density
-	double x1, x2, r1;
+	double r1, x1; //, x2;
 	x1 = *y - *tnow - *d;
-	x2 = *y - *tnow;
+	//x2 = *y - *tnow;
 	////**** Could wring more performance out of this ... r2 doesn't change over all rejection samples for a given jump
 	if(x1 > 0) LJMA_phtcdf(&x1, pi1, Q, evals, Qinv_1, n, &r1, workD); else r1 = 1;
 	//if(x2 > 0) LJMA_phtcdf(&x2, pi2, Q, evals, Qinv_1, n, &r2, workD); else r2 = 1; // DON'T EVEN NEED TO CALC THIS!! JUST NEED UP TO A CONST.
@@ -183,15 +183,18 @@ double LJMA_condjumpdens_ars(double d, void *par) {
 // return: a sample from the conditional jump density
 void LJMA_condjump_r_ars(double *tnow, int *jnow, double *y, double *S, double *Q, double *evals, double *Qinv_1, double *P, int *n, double *res, double *workD) {
 	LJMA_GetRNGstate();
-	
+
 	if(*tnow >= *y) {
 		*res = rexp(1.0/-S[*jnow+*jnow*(*n)]);
 		LJMA_PutRNGstate();
 		return;
 	}
-	
+
 	double x = *y-*tnow, *pi = workD, denom;
-	for(int i=0; i<*n; i++) pi[i] = 0.0; pi[*jnow] = 1.0;
+	for(int i=0; i<*n; i++) {
+	  pi[i] = 0.0;
+	}
+	pi[*jnow] = 1.0;
 	LJMA_phtcdf(&x, pi, Q, evals, Qinv_1, n, &denom, workD + *n);
 	//	Rprintf("%lf, ", exp(S[*jnow+*jnow*(*n)] * (*y - *tnow))/denom);
 	if(*tnow < *y && runif(0.0,1.0) < exp(S[*jnow+*jnow*(*n)] * (*y - *tnow))/denom) {
@@ -200,7 +203,7 @@ void LJMA_condjump_r_ars(double *tnow, int *jnow, double *y, double *S, double *
 		return;
 	}
 	if(*tnow > *y) Rprintf("ALERT!\n");
-	
+
 	condjumpdens_pars pars;
 	pars.tnow = tnow;
 	pars.jnow = jnow;
@@ -212,10 +215,10 @@ void LJMA_condjump_r_ars(double *tnow, int *jnow, double *y, double *S, double *
 	pars.P = P;
 	pars.n = n;
 	pars.workD = workD;
-	
+
 	double xinit[4], xl, xr, convex, xprev, xsamp, qcent, xcent;
 	int info, ninit, npoint, dometrop, nsamp, ncent, neval;
-	
+
 	//xinit[3] = *y;
 	//while(!isfinite(LJMA_condjumpdens_ars(xinit[3], &pars))) {
 	//	xinit[3] = log(xinit[3]);
@@ -226,10 +229,10 @@ void LJMA_condjump_r_ars(double *tnow, int *jnow, double *y, double *S, double *
 	xinit[2] = xinit[1]*2.0;
 	xinit[3] = *y - *tnow - xinit[0];
 	ninit = 4;
-	
+
 	xl = 0.0;
 	xr = *y - *tnow;
-	
+
 	convex = 1.0;
 	npoint = 100;
 	dometrop = 1;
@@ -240,19 +243,19 @@ void LJMA_condjump_r_ars(double *tnow, int *jnow, double *y, double *S, double *
 	xcent = 0.0;
 	ncent = 0;
 	neval = 0;
-	
+
 	double (*myfunc)(double, void*);
 	myfunc = &LJMA_condjumpdens_ars;
-	
+
 	info = arms(xinit, ninit, &xl, &xr, myfunc, &pars, &convex, npoint, dometrop, &xprev, &xsamp, nsamp, &qcent, &xcent, ncent, &neval);
 	if(info != 0) {
 		Rprintf("Error (LJMA_condjump_r_ars 01): ARS failed, code=%d\n", info);
 	}
 	//Rprintf("%lf - ", xsamp);
 	if(xsamp > *y - *tnow) Rprintf("ALERT!!\n");
-	
+
 	*res = xsamp;
-	
+
 	LJMA_PutRNGstate();
 }
 
@@ -295,7 +298,7 @@ void LJMA_condjump_r_ars(double *tnow, int *jnow, double *y, double *S, double *
 //
 void LJMA_samplechain(double *y, int *censored, double *pi, double *S, double *Q, double *evals, double *Qinv_1, double *P, double *Pfull, int *n, int *reverse, double *piR, double *res_z, int *res_B, int *res_N, int *res_pre, double *workD) {
 	LJMA_GetRNGstate();
-	
+
 	// Initialise output vars
 	*res_B = 0;
 	for(int i=0; i<*n; i++) {
@@ -304,7 +307,7 @@ void LJMA_samplechain(double *y, int *censored, double *pi, double *S, double *Q
 			res_N[i + j * *n] = 0;
 		}
 	}
-	
+
 	// Choose starting state ...
 	double sofar = 0.0, target;
 	if(*reverse == 0) {
@@ -325,7 +328,7 @@ void LJMA_samplechain(double *y, int *censored, double *pi, double *S, double *Q
 		(*res_pre)--;
 	}
 	//Rprintf("%d - Start at: %d\n", *reverse, *res_B);
-	
+
 	// Run through the chain
 	double t = 0.0, lastt = 0.0;
 	int j, lastj = 0, i;
@@ -336,13 +339,13 @@ void LJMA_samplechain(double *y, int *censored, double *pi, double *S, double *Q
 	while(t < *y || *censored) {
 		lastt = t;
 		lastj = j;
-		
+
 		// Make the time jump
 		/*LJMA_condjump_r(&t, &j, y, S, Q, evals, Qinv_1, n, &d);*/
 		LJMA_condjump_r_ars(&t, &j, y, S, Q, evals, Qinv_1, P, n, &d, workD); LJMA_counter++;
 		//if(*censored == 1) { Rprintf("- %d/%.2lf/%.2lf/%.2lf/", j, t, *y, d); }
 		t += d;
-		
+
 		// Make the state jump
 		target = runif(0.0, 1.0); //if(*censored == 1) { Rprintf("%.2lf(", target); }
 		sofar = 0.0;
@@ -372,7 +375,7 @@ void LJMA_samplechain(double *y, int *censored, double *pi, double *S, double *Q
 		}
 		//Rprintf(") -");
 		j--;
-		
+
 		if(j == *n) {
 			break;
 		} else if(*reverse == 0 && (t < *y || *censored)) {
@@ -383,11 +386,11 @@ void LJMA_samplechain(double *y, int *censored, double *pi, double *S, double *Q
 			res_N[j + lastj * *n]++;
 		}
 	}
-	
+
 	if(*censored == 0) { if(*reverse == 0) {	res_z[lastj] += *y - lastt; *res_pre = lastj; } else { res_z[lastj] += *y - lastt; *res_B = lastj; } }
 	else { if(*reverse == 0) {	res_z[lastj] += t - lastt; *res_pre = lastj; } else { res_z[lastj] += t - lastt; *res_B = lastj; } }
 	res_N[*res_pre + *res_pre * *n]++; // records on the diagonal what state we jumped to absorption from
-	
+
 	/*if(*censored == 1) {
 	 Rprintf("\n\nB = %d\n", *res_B);
 	 Rprintf("z = ");
@@ -409,7 +412,7 @@ void LJMA_samplechain(double *y, int *censored, double *pi, double *S, double *Q
 	 Rprintf("\n");
 	 }
 	 }*/
-	
+
 	LJMA_GUI();
 	LJMA_PutRNGstate();
 }
@@ -441,12 +444,12 @@ void LJMA_reversestart(double *t, double *pi, double *s, double *Q, double *eval
 	double *a, denom = 0.0, *b;
 	a = workD; workD += *n; b = workD; workD += *n;
 	char trans = 'T'; double alpha = 1.0, beta = 0.0; int inc = 1;
-	F77_CALL(dgemv)(&trans, n, n, &alpha, Q, n, pi, &inc, &beta, a, &inc); // pi %*% e$vectors -> a
+	F77_CALL(dgemv)(&trans, n, n, &alpha, Q, n, pi, &inc, &beta, a, &inc FCONE); // pi %*% e$vectors -> a
 	// a %*% diag(exp(e$values*t),n,n) -> a
 	for(int i=0; i<*n; i++) {
 		a[i] = a[i] * exp(evals[i] * *t);
 	}
-	F77_CALL(dgemv)(&trans, n, n, &alpha, Qinv, n, a, &inc, &beta, b, &inc); // a %*% solve(e$vectors)
+	F77_CALL(dgemv)(&trans, n, n, &alpha, Qinv, n, a, &inc, &beta, b, &inc FCONE); // a %*% solve(e$vectors)
 	// then find denominator
 	for(int i=0; i<*n; i++) {
 		denom += b[i] * s[i];
@@ -472,7 +475,7 @@ void LJMA_stationary(double *S, int *n, double *res_pi, double *workD, int *work
 	double *Q;
 	Q = workD; workD += *n * *n;
 	memcpy(Q, S, *n * *n * sizeof(*S));
-	
+
 	// Q + E
 	for(int i=0; i < *n; i++) {
 		Q[i + i * *n] = 0.0;
@@ -483,7 +486,7 @@ void LJMA_stationary(double *S, int *n, double *res_pi, double *workD, int *work
 		}
 		Q[i + i * *n]++;
 	}
-	
+
 	/*Rprintf("\n\nQ+E: ");
 	 for(int i=0; i<*n; i++) {
 	 for(int j=0; j<*n; j++) {
@@ -492,15 +495,15 @@ void LJMA_stationary(double *S, int *n, double *res_pi, double *workD, int *work
 	 Rprintf("\n");
 	 }
 	 Rprintf("\n\n");*/
-	
-	
+
+
 	// (Q+E)^{-1}
 	LJMA_inverse(Q, n, workI);
-	
+
 	// e.(Q+E)^{-1}
 	double *e;
 	e = workD; workD += *n;
 	for(int i=0; i<*n; i++) { e[i] = 1.0; }
 	char trans = 'T'; double alpha = 1.0, beta = 0.0; int inc = 1;
-	F77_CALL(dgemv)(&trans, n, n, &alpha, Q, n, e, &inc, &beta, res_pi, &inc);
+	F77_CALL(dgemv)(&trans, n, n, &alpha, Q, n, e, &inc, &beta, res_pi, &inc FCONE);
 }

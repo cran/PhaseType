@@ -41,7 +41,7 @@ phtMCMC(x, states, beta, nu, zeta, n, mhit=1, resume=NULL, silent=FALSE)
 \details{
 Usage of this function effectively involves specification of the number of states for the CTMC generator matrix, the parameter priors in Gamma form and providing absorption time data.
 
-If you want to specify structure on your generator (for example, to model a stochastic process about which some underlying mechanism is known), then consider using \code{\link{phtMCMC2}} instead.  This function is best illustrated by the example below which is \href{http://www.louisaslett.com/PhaseType}{more fully discussed on this webpage}.
+If you want to specify structure on your generator (for example, to model a stochastic process about which some underlying mechanism is known), then consider using \code{\link{phtMCMC2}} instead.  This function is best illustrated by the example below which is \href{https://www.louisaslett.com/PhaseType/}{more fully discussed on this webpage}.
 }
 \value{
   \code{phtMCMC} returns an object of class \code{"phtMCMC"}.
@@ -50,7 +50,7 @@ If you want to specify structure on your generator (for example, to model a stoc
   \item{samples}{an object of class \code{"mcmc"} containing the MCMC samples for each parameter in the model.}
   \item{data}{a vector containing the original data used in the inference.}
   \item{vars}{a list of the distinct variable names in the CTMC generator.}
-  \item{T}{the naming scheme for the generator which was fitted.}
+  \item{TT}{the naming scheme for the generator which was fitted.}
   \item{beta}{the Dirichlet prior probability mass function on the starting states.}
   \item{nu}{a list of the prior nu hyper-parameters used when phtMCMC2 was called.}
   \item{zeta}{a list of the prior zeta hyper-parameters used when phtMCMC2 was called.}
@@ -61,10 +61,10 @@ If you want to specify structure on your generator (for example, to model a stoc
 Bladt, M., Gonzalez, A. and Lauritzen, S. L. (2003), \sQuote{The estimation of Phase-type related functionals using Markov chain Monte Carlo methods}, \emph{Scandinavian Actuarial Journal} 2003(4), 280-300.
 }
 \author{
-Louis J.M. Aslett \email{louis@maths.tcd.ie} (\url{http://www.louisaslett.com/})
+Louis J.M. Aslett \email{louis.aslett@durham.ac.uk} (\url{https://www.louisaslett.com/})
 }
 \note{
-Please feel free to email \email{louis@maths.tcd.ie} with any queries or if you encounter errors when running this function.
+Please feel free to email \email{louis.aslett@durham.ac.uk} with any queries or if you encounter errors when running this function.
 }
 
 
@@ -73,10 +73,10 @@ Please feel free to email \email{louis@maths.tcd.ie} with any queries or if you 
 }
 \examples{
 # Some pre-simulated absorption times
-x <- c(1.45353415045187, 1.85349532001349, 2.01084961814576, 0.505725921290172, 
-1.56252630012213, 3.41158665930278, 1.52674487509487, 4.3428662377235, 
-8.03208018151311, 2.41746547476986, 0.38828086509283, 2.61513815012196, 
-3.39148865480856, 1.82705817807965, 1.42090953713845, 0.851438991331866, 
+x <- c(1.45353415045187, 1.85349532001349, 2.01084961814576, 0.505725921290172,
+1.56252630012213, 3.41158665930278, 1.52674487509487, 4.3428662377235,
+8.03208018151311, 2.41746547476986, 0.38828086509283, 2.61513815012196,
+3.39148865480856, 1.82705817807965, 1.42090953713845, 0.851438991331866,
 0.0178808867191894, 0.632198596390046, 0.959910259815998, 1.83344199966323)
 
 # Prior on starting state
@@ -91,7 +91,9 @@ n <- 3
 # since starts in stationarity here).  Do more in practice!
 res <- phtMCMC(x, n, dirpi, nu, zeta, 6, mhit=1)
 print(res)
+\donttest{
 plot(res)
+}
 }
 \keyword{ phase-type }
 \keyword{ bayesian }

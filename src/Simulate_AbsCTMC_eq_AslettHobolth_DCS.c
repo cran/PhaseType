@@ -11,19 +11,19 @@
 int LJMA_Hobolth_endState(double y, double *pi, double *Q, double *evals, double *Qinv, double *s, int n, double *workD) {
 	LJMA_GetRNGstate();
 	const char transT = 'T'; const double oneD = 1.0, zeroD = 0.0; const int oneI = 1.0;
-	
+
 	double *p, *tmp;
 	p = workD; workD += n;
 	tmp = workD; workD += n;
-	
+
 	// p <- pi %*% Q
-	F77_CALL(dgemv)(&transT, &n, &n, &oneD, Q, &n, pi, &oneI, &zeroD, p, &oneI);
+	F77_CALL(dgemv)(&transT, &n, &n, &oneD, Q, &n, pi, &oneI, &zeroD, p, &oneI FCONE);
 	// p <- pi %*% Q %*% exp(L*y)
 	for(int i=0; i<n; i++) {
 		p[i] *= exp(evals[i]*y);
 	}
 	// tmp <- pi %*% Q %*% exp(L*y) %*% Qinv
-	F77_CALL(dgemv)(&transT, &n, &n, &oneD, Qinv, &n, p, &oneI, &zeroD, tmp, &oneI);
+	F77_CALL(dgemv)(&transT, &n, &n, &oneD, Qinv, &n, p, &oneI, &zeroD, tmp, &oneI FCONE);
 	// p <- pi %*% Q %*% exp(L*y) %*% Qinv * s
 	double sum = 0.0;
 	for(int i=0; i<n; i++) {
@@ -37,7 +37,7 @@ int LJMA_Hobolth_endState(double y, double *pi, double *Q, double *evals, double
 		Rprintf("ALERT!\n");
 		Rprintf("y=%lf\npi=(%lf,%lf,%lf)\nQ={{%lf,%lf,%lf},{%lf,%lf,%lf},{%lf,%lf,%lf}}\n", y, pi[0], pi[1], pi[2], Q[0], Q[1], Q[2], Q[3], Q[4], Q[5], Q[6], Q[7], Q[8]);
 	}
-	
+
 	double sofar = 0.0, target;
 	target = runif(0.0, 1.0);
 	int res = 0;
@@ -45,7 +45,7 @@ int LJMA_Hobolth_endState(double y, double *pi, double *Q, double *evals, double
 		sofar += p[res++];
 	}
 	res--;
-	
+
 	LJMA_PutRNGstate();
 	return(res);
 }
@@ -99,18 +99,18 @@ void LJMA_MHsample_Hobolth2(double *y, int *censored, int *m, double *pi, double
 			res_N[i + j * *n] = 0;
 		}
 	}
-	
+
 	// Create memory for current steps
 	double *c_z;
 	int c_B, *c_N, c_pre;
 	c_z = workD; workD += *n;
 	c_N = workI; workI += *n * *n;
-	
+
 	// Exit state choice
 	int b; //double *bvec;
 	//bvec = workD; workD += *n;
 	const char transN = 'N'; const double oneD = 1.0, zeroD = 0.0; const int oneI = 1.0;
-	
+
 	// Off we go
 	double *y_p;
 	int *censored_p;
@@ -127,11 +127,11 @@ void LJMA_MHsample_Hobolth2(double *y, int *censored, int *m, double *pi, double
 			else
 				bvec[j] = 0.0;
 		}
-		F77_CALL(dgemv)(&transN, n, n, &oneD, Qinv, n, bvec, &oneI, &zeroD, Qinv_b, &oneI);
-		
+		F77_CALL(dgemv)(&transN, n, n, &oneD, Qinv, n, bvec, &oneI, &zeroD, Qinv_b, &oneI FCONE);
+
 		if(*censored_p) Rprintf("\nWARNING: DCS does not support censoring\n");
 		LJMA_samplechain_Hobolth(y_p, pi, S, Q, evals, Qinv_b, bvec, s, n, c_z, &c_B, c_N, &c_pre, workD);
-		
+
 		// Now add the current step to the running total
 		res_B[c_B]++;
 		for(k=0; k<*n; k++) {
@@ -140,7 +140,7 @@ void LJMA_MHsample_Hobolth2(double *y, int *censored, int *m, double *pi, double
 				res_N[k + l * *n] += c_N[k + l * *n];
 			}
 		}
-		
+
 		y_p++;
 		censored_p++;
 	}

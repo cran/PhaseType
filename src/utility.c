@@ -15,14 +15,14 @@ int LJMA_counter = 0;
 // The next two functions are for allocating the LAPACK work space when calling certain functions directly from R instead of via the outer Gibbs call
 void LJMA_LAPACKspace(int *n) {
 	char balanc = 'B', jobvl = 'V', jobvr = 'V', sense = 'B'; int lwork = -1, info; double work;
-	F77_CALL(dgeevx)(&balanc, &jobvl, &jobvr, &sense, n, NULL, n, NULL, NULL, NULL, n, NULL, n, NULL, NULL, NULL, NULL, NULL, NULL, &work, &lwork, NULL, &info);
+	F77_CALL(dgeevx)(&balanc, &jobvl, &jobvr, &sense, n, NULL, n, NULL, NULL, NULL, n, NULL, n, NULL, NULL, NULL, NULL, NULL, NULL, &work, &lwork, NULL, &info FCONE FCONE FCONE FCONE);
 	LJMA_LAPACK_lwork = (int) work;
 	F77_CALL(dgetri)(n, NULL, n, NULL, &work, &lwork, &info);
 	if((int) work > LJMA_LAPACK_lwork) LJMA_LAPACK_lwork = (int) work;
 	//LJMA_LAPACK_work = (double *) R_alloc(LJMA_LAPACK_lwork, sizeof(double));
 	LJMA_LAPACK_work = (double *) Calloc(LJMA_LAPACK_lwork, double);
 }
-void LJMA_LAPACKspaceFree() {
+void LJMA_LAPACKspaceFree(void) {
 	Free(LJMA_LAPACK_work);
 }
 
@@ -56,7 +56,7 @@ int LJMA_inverse(double *A, int *n, int *workI) {
 			Rprintf("Error (LJMA_inverse 01): failed LAPACK call, code=%d\n", info);
 			return(info);
 		}
-	
+
 	// Do inverse calculation using that LU decomposition
 	F77_CALL(dgetri)(n, A, n, ipiv, LJMA_LAPACK_work, &LJMA_LAPACK_lwork, &info);
 		if(info != 0) {
@@ -89,7 +89,7 @@ int LJMA_eigen(int *n, double *S, double *evals, double *Q, double *Qinv, double
 	double *A;
 	A = workD; workD += *n * *n;
 	memcpy(A, S, *n * *n * sizeof(*S));
-	
+
 	// Setup storage for imaginary part of eigenvalues; the left eigenvectors; the scaling details (even though unwanted) and condition numbers and workspace
 	double *evalsi;
 	evalsi = workD; workD += *n;
@@ -103,38 +103,38 @@ int LJMA_eigen(int *n, double *S, double *evals, double *Q, double *Qinv, double
 	rcondv = workD; workD += *n;
 	int *iwork;
 	iwork = workI; workI += 2 * *n - 2;
-		
+
 	// do eigen decomposition
 	char balanc = 'B', jobvl = 'V', jobvr = 'V', sense = 'B'; int info, ilo, ihi; double abnrm;
-	F77_CALL(dgeevx)(&balanc, &jobvl, &jobvr, &sense, n, A, n, evals, evalsi, Ql, n, Q, n, &ilo, &ihi, scale, &abnrm, rconde, rcondv, LJMA_LAPACK_work, &LJMA_LAPACK_lwork, iwork, &info);
+	F77_CALL(dgeevx)(&balanc, &jobvl, &jobvr, &sense, n, A, n, evals, evalsi, Ql, n, Q, n, &ilo, &ihi, scale, &abnrm, rconde, rcondv, LJMA_LAPACK_work, &LJMA_LAPACK_lwork, iwork, &info FCONE FCONE FCONE FCONE);
 		if(info != 0) {
 			Rprintf("Error (LJMA_eigen 01): failed LAPACK call, code=%d\n", info);
 			return(info);
 		}
-	
+
 	// Check none of the eigen values have an imaginary part & condition numbers are ok
 	//char cmach = 'E';
-	//double precision = F77_CALL(dlamch)(&cmach);
+	//double precision = F77_CALL(dlamch)(&cmach FCONE);
 	for(int i=0; i<*n; i++) {
 		if(evalsi[i] > 0) Rprintf("Error: imaginary part of eigenvalue %d found.\n", i+1);
 		//Rprintf("i=%d: eval = %e, err(eval) = %e, err(evect) = %e\n", i+1, evals[i], precision*abnrm/rconde[i], precision*abnrm/rcondv[i]);
 	}
-	
+
 	//// Now find Q inverse
 	// copy Q into Qinv
 	memcpy(Qinv, Q, *n * *n * sizeof(*Q));
 	LJMA_inverse(Qinv, n, workI);
-	
+
 	return(0);
 }
 
 
 
 
-/* The following was taken from core R for personal 
+/* The following was taken from core R for personal
  * maintenance/modification.
  * It is was private non-API code as noted by Prof Ripley in personal
- * correspondance, so calls to it were removed from this package and 
+ * correspondence, so calls to it were removed from this package and
  * the source brought into the package for use directly.
  */
 /*
@@ -242,11 +242,11 @@ double Find02(			/* An estimate of the root */
     double a,b,c, fc;			/* Abscissae, descr. see above,  f(c) */
     double tol;
     int maxit;
-	
+
     a = ax;  b = bx;
     c = a;   fc = fa;
     maxit = *Maxit + 1; tol = * Tol;
-	
+
     /* First test if we have found a root at an endpoint */
     if(fa == 0.0) {
 		*Tol = 0.0;
@@ -258,7 +258,7 @@ double Find02(			/* An estimate of the root */
 		*Maxit = 0;
 		return b;
     }
-	
+
     while(maxit--)		/* Main iteration loop	*/
     {
 		double prev_step = b-a;		/* Distance from the last but one
@@ -269,7 +269,7 @@ double Find02(			/* An estimate of the root */
 							 * sion operations is delayed
 							 * until the last moment	*/
 		double new_step;		/* Step at this iteration	*/
-		
+
 		if( fabs(fc) < fabs(fb) )
 		{				/* Swap data for b to be the	*/
 			a = b;  b = c;  c = a;	/* best approximation		*/
@@ -277,14 +277,14 @@ double Find02(			/* An estimate of the root */
 		}
 		tol_act = 2*EPSILON*fabs(b) + tol/2;
 		new_step = (c-b)/2;
-		
+
 		if( fabs(new_step) <= tol_act || fb == (double)0 )
 		{
 			*Maxit -= maxit;
 			*Tol = fabs(c-b);
 			return b;			/* Acceptable approx. is found	*/
 		}
-		
+
 		/* Decide if the interpolation can be tried	*/
 		if( fabs(prev_step) >= tol_act	/* If prev_step was large enough*/
 		   && fabs(fa) > fabs(fb) ) {	/* and was in true direction,
@@ -298,7 +298,7 @@ double Find02(			/* An estimate of the root */
 				q = 1.0 - t1;
 			}
 			else {			/* Quadric inverse interpolation*/
-				
+
 				q = fa/fc;  t1 = fb/fc;	 t2 = fb/fa;
 				p = t2 * ( cb*q*(q-t1) - (b-a)*(t1-1.0) );
 				q = (q-1.0) * (t1-1.0) * (t2-1.0);
@@ -307,7 +307,7 @@ double Find02(			/* An estimate of the root */
 				q = -q;			/* opposite sign; make p positive */
 			else			/* and assign possible minus to	*/
 				p = -p;			/* q				*/
-			
+
 			if( p < (0.75*cb*q-fabs(tol_act*q)/2) /* If b+p/q falls in [b,c]*/
 			   && p < fabs(prev_step*q/2) )	/* and isn't too large	*/
 				new_step = p/q;			/* it is accepted
@@ -316,7 +316,7 @@ double Find02(			/* An estimate of the root */
 										 * reduce [b,c] range to more
 										 * extent */
 		}
-		
+
 		if( fabs(new_step) < tol_act) {	/* Adjust the step to be not less*/
 			if( new_step > (double)0 )	/* than tolerance		*/
 				new_step = tol_act;
@@ -329,7 +329,7 @@ double Find02(			/* An estimate of the root */
 			/* Adjust c for it to have a sign opposite to that of b */
 			c = a;  fc = fa;
 		}
-		
+
     }
     /* failed! */
     *Tol = fabs(c-b);

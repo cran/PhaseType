@@ -1,6 +1,6 @@
 print.phtMCMC <- function(x, ...) {
 	cat("MCMC chain of length", x$iterations, "iterations for Phase-type inference on matrix structure:\n")
-	print(x$T, quote=FALSE)
+	print(x$TT, quote=FALSE)
 	cat("\nPriors:\n")
 	for(i in 1:length(x$vars)) {
 		cat(x$vars[i], " ~ Gamma(shape=", x$nu[[i]], ", scale=1/", x$zeta[[i]], ")\n", sep="")

@@ -1,0 +1,6 @@
+bibentry(bibtype = "PhdThesis",
+         key = "Aslett2012",
+         title = "MCMC for Inference on Phase-type and Masked System Lifetime Models",
+         author = person(c("Louis", "J.", "M."), "Aslett"),
+         year = "2012",
+         school = "Trinity College Dublin")
