@@ -70,7 +70,7 @@ phtMCMC2 = function(x, TT, beta, nu, zeta, n, censored=rep(FALSE, length(x)), C=
 	methodNum <- sum(methodKey[unique(method)])
 
 	# Run MCMC
-	res <- .C("LJMA_Gibbs", it=as.integer(n), mhit=as.integer(mhit), method=as.integer(methodNum), n=as.integer(dimT-1), m=as.integer(length(varNames)), nu=as.double(nu), zeta=as.double(zeta), T=as.integer(TN), C=as.double(C), y=as.double(x), l=as.integer(length(x)), censored=as.integer(censored), start=as.double(start), silent=as.integer(silent), res=as.double(ret))
+	res <- .C(LJMA_Gibbs, it=as.integer(n), mhit=as.integer(mhit), method=as.integer(methodNum), n=as.integer(dimT-1), m=as.integer(length(varNames)), nu=as.double(nu), zeta=as.double(zeta), T=as.integer(TN), C=as.double(C), y=as.double(x), l=as.integer(length(x)), censored=as.integer(censored), start=as.double(start), silent=as.integer(silent), res=as.double(ret))
 
 	if(!is.null(resume)) {
 		ret <- rbind(resume[-dim(resume)[1],], matrix(res$res, nrow=n, ncol=length(varNames)))

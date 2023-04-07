@@ -13,7 +13,7 @@ static const R_CMethodDef cMethods[] = {
   {NULL, NULL, 0, NULL}
 };
 
-void R_init_kalis(DllInfo *info) {
+void R_init_PhaseType(DllInfo *info) {
   R_registerRoutines(info, cMethods, NULL, NULL, NULL);
   R_useDynamicSymbols(info, FALSE);
   R_forceSymbols(info, TRUE);

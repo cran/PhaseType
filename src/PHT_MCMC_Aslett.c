@@ -176,8 +176,8 @@ void LJMA_Gibbs(int *it, int *mhit, int *method, int *n, int *m, double *nu, dou
 
 	if(((*method & METHOD_ECS) | (*method & METHOD_DCS)) > 0) {
 		// LAPACK workspace ... make NULL calls to figure out optimal workspace size for speed
-		char balanc = 'B', jobvl = 'V', jobvr = 'V', sense = 'B'; int lwork = -1, info; double work;
-		F77_CALL(dgeevx)(&balanc, &jobvl, &jobvr, &sense, n, NULL, n, NULL, NULL, NULL, n, NULL, n, NULL, NULL, NULL, NULL, NULL, NULL, &work, &lwork, NULL, &info FCONE FCONE FCONE FCONE);
+		char balanc = 'B', jobvl = 'V', jobvr = 'V', sense = 'B'; int lwork = -1, info, ilo, ihi; double work, abnrm;
+		F77_CALL(dgeevx)(&balanc, &jobvl, &jobvr, &sense, n, Q, n, evals, workD, workD, n, Q, n, &ilo, &ihi, workD, &abnrm, workD, workD, &work, &lwork, NULL, &info FCONE FCONE FCONE FCONE);
 		LJMA_LAPACK_lwork = (int) work;
 		F77_CALL(dgetri)(n, NULL, n, NULL, &work, &lwork, &info);
 		if((int) work > LJMA_LAPACK_lwork) LJMA_LAPACK_lwork = (int) work;

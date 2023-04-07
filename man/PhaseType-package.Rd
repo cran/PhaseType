@@ -10,7 +10,7 @@ A collection of tools for working with Phase-type Distributions, including sampl
 \tabular{ll}{
 Package: \tab PhaseType\cr
 Type: \tab Package\cr
-Version: \tab 0.2.0\cr
+Version: \tab 0.2.1\cr
 Date: \tab 2011-10-12\cr
 License: \tab GPL-2 | GPL-3\cr
 LazyLoad: \tab yes\cr
