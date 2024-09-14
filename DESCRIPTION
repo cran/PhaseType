@@ -7,7 +7,7 @@ Description: Functions to perform Bayesian inference on absorption time data for
 URL: https://www.louisaslett.com/PhaseType/,
         https://github.com/louisaslett/PhaseType
 BugReports: https://github.com/louisaslett/PhaseType/issues
-Version: 0.2.1
+Version: 0.3.0
 Maintainer: Louis Aslett <louis.aslett@durham.ac.uk>
 Authors@R: c(person("Louis", "Aslett", email = "louis.aslett@durham.ac.uk",
                     role = c("aut", "cre")),
@@ -21,8 +21,8 @@ Suggests: actuar
 License: GPL-2 | GPL-3
 LazyLoad: yes
 NeedsCompilation: yes
-Packaged: 2023-04-05 23:19:20 UTC; louis
+Packaged: 2024-09-14 11:02:52 UTC; louis
 Author: Louis Aslett [aut, cre],
   Wally Gilks [ctb]
 Repository: CRAN
-Date/Publication: 2023-04-07 15:30:02 UTC
+Date/Publication: 2024-09-14 12:10:02 UTC

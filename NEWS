@@ -1,3 +1,9 @@
+PhaseType 0.3.0
+===============
+
+ * Fix requested by CRAN to change Calloc and Free C calls to use R_ versions,
+   so that STRICT_R_HEADERS=1 compiles ok (to be default from R 4.5.0)
+
 PhaseType 0.2.0
 ===============
 

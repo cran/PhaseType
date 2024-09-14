@@ -20,10 +20,10 @@ void LJMA_LAPACKspace(int *n) {
 	F77_CALL(dgetri)(n, NULL, n, NULL, &work, &lwork, &info);
 	if((int) work > LJMA_LAPACK_lwork) LJMA_LAPACK_lwork = (int) work;
 	//LJMA_LAPACK_work = (double *) R_alloc(LJMA_LAPACK_lwork, sizeof(double));
-	LJMA_LAPACK_work = (double *) Calloc(LJMA_LAPACK_lwork, double);
+	LJMA_LAPACK_work = (double *) R_Calloc(LJMA_LAPACK_lwork, double);
 }
 void LJMA_LAPACKspaceFree(void) {
-	Free(LJMA_LAPACK_work);
+	R_Free(LJMA_LAPACK_work);
 }
 
 

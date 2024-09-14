@@ -1,11 +1,11 @@
-38bcf1b23a4eaef72467a9fe59dd191d *DESCRIPTION
+6f9472703aed9d82fcb7933358f432ff *DESCRIPTION
 0988d3366baf82df25aac4f248947360 *NAMESPACE
-3033e8538f17e40b8c6af6a1b15944f7 *NEWS
+4c28abb562c50fc32702685453f7da67 *NEWS
 7cf13f0e592d79052ba392571f33c912 *R/phtMCMC.R
 a54ece5ae7ffe72bf48ca8da95d2808a *R/phtMCMC2.R
 7ebb57087d68a72f8de9efeda38943c3 *R/plot.phtMCMC.R
 25f6a2a8c0de67970b2ee3f584c10f9d *R/print.phtMCMC.R
-8b974b0671a98b35484876a76e71cd50 *README.md
+4df85dfc1b976bd4327b8f092fb714d2 *README.md
 bf04b68a44f079b19e30f407f0571de4 *inst/CITATION
 636fa07ec601df5216b4dd0328864111 *man/PhaseType-package.Rd
 e5bcc9e9c1f81d8ab272ae755dabc5df *man/phtMCMC.Rd
@@ -30,7 +30,7 @@ d4ce1bbdcf1ae98df302aa4c1c7bc66f *src/Simulate_AbsCTMC_gt_Aslett_DCS.h
 aba0a54b70fc664de6d2e91db782a502 *src/Simulate_AbsCTMC_gt_Hobolth_DCS.h
 b59d2f70ad8ab00aeee2570c2f38252c *src/arms.c
 1b4f8aeb39cb3494db32c218645bd4a5 *src/arms.h
-7a91d385a3ad12f3d698a1aa7653ff08 *src/utility.c
+6bbc840f71f50a04f3c1e2176acdb493 *src/utility.c
 b7ff20978d7a7a7fe8b17d3e0280fbda *src/utility.h
 6a8e87cb2bcf9c6b545db3671a3241b1 *tests/phtMCMC.R
 0372bc81a39553bb471cd13e6d72a7f3 *tests/phtMCMC2.R

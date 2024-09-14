@@ -1,9 +1,9 @@
 # PhaseType R package :package:
 [![Project Status: Active - The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
-[![license](http://img.shields.io/badge/license-GPL%20%28%3E=%202%29-brightgreen.svg?style=flat)](http://www.gnu.org/licenses/gpl-2.0.html)
-[![metacran version](http://www.r-pkg.org/badges/version/PhaseType)](https://CRAN.R-project.org/package=PhaseType)
-[![metacran downloads](http://cranlogs.r-pkg.org/badges/PhaseType?color=brightgreen)](https://CRAN.R-project.org/package=PhaseType)
-<!--[CRAN check result](https://cran.r-project.org/web/checks/check_results_PhaseType.html)-->
+[![license](https://img.shields.io/badge/license-GPL%20%28%3E=%202%29-brightgreen.svg?style=flat)](https://www.gnu.org/licenses/gpl-2.0.html)
+[![metacran version](https://www.r-pkg.org/badges/version/PhaseType)](https://cran.r-project.org/package=PhaseType)
+[![metacran downloads](https://cranlogs.r-pkg.org/badges/grand-total/PhaseType)](https://cran.r-project.org/package=PhaseType)
+[![PhaseType status badge](https://louisaslett.r-universe.dev/badges/PhaseType)](https://louisaslett.r-universe.dev/PhaseType)
 
 This is a package for working with Phase-type (PHT) distributions in the R programming language.
 The entire of the MCMC portion of the code has been written in optimised C for higher performance and very low memory use, whilst being easy to call from wrapper R functions.
@@ -60,10 +60,13 @@ install.packages("PhaseType")
 
 ## Install development version (not recommended)
 
-Installing directly from [GitHub](https://github.com) is not supported by the
-`install.packages` command. You could use the
-[devtools](https://CRAN.R-project.org/package=devtools) package
-to install the development version if desired.
+You can get the very latest version from R-universe:
+
+```r
+install.packages("PhaseType", repos = c("https://louisaslett.r-universe.dev", "https://cloud.r-project.org"))
+```
+
+Installing directly from [GitHub](https://github.com) is not supported by the `install.packages` command, but if you wish to compile from source then you could use the [devtools](https://CRAN.R-project.org/package=devtools) package:
 
 ```r
 install.packages("remotes")
@@ -77,7 +80,7 @@ so historic source can be downloaded from there.
 
 ## Citation
 
-If you use this software, please cite the following:
+If you use this software, please use the following citation:
 
 Aslett, L. J. M. (2012), MCMC for Inference on Phase-type and Masked System Lifetime Models, PhD thesis, Trinity College Dublin.
 
